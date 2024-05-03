@@ -1,0 +1,14 @@
+'Main
+Sub Main()
+ Dim AbsIncFlag
+ AbsIncFlag = GetUserLED(1250)
+ If AbsIncFlag = 0  THEN
+    Call OperateDustCoverOutput(1)
+ Else
+    Call OperateDustCoverOutput(0)
+ END If
+END Sub
+
+#expand "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+Main
+'- 

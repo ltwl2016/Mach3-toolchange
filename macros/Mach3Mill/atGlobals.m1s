@@ -1,0 +1,308 @@
+
+'-----------------ProberTool----------------------
+Sub Probe(CurrentToolNum)
+ '-------------------
+Zpos = GetDRO(2)
+Tool = CurrentToolNum
+ZOffset = GetVar (1000)
+ZProbeStart = -12.9
+If GetOemDro(1233) <> 0 Then
+  ZProbeStart = GetOemDro(1233)
+End If
+Probe_Touch_X = -261.5
+Probe_Touch_Y = -19.4
+If (GetOemDro(1230) <> 0) and (GetOemDro(1231) <> 0)Then
+  Probe_Touch_X = GetOemDro(1230)
+  Probe_Touch_Y = GetOemDro(1231)
+End If
+ZProbeMax = -30.0
+ZRetract =2.00
+ProbeFeed1 = 100
+ProbeFeed2 = 50
+ToolUp = -5.5555
+If GetOemDro(1232) <> 0 Then
+  ToolUp = GetOemDro(1232)
+ End If
+'CurrentFeed = GetOEMDRO(818)
+If GetOemLed (825) <> 0 Then 'Check to see if the probe is already grounded or faulty
+     MsgBox (ProbeTchGnd)
+  Exit Sub
+Else
+     Code "G00 G53 Z" & ToolUp
+	 While IsMoving
+     Sleep(100)
+     Wend
+     Code "G00 G53 X" & Probe_Touch_X & "Y" & Probe_Touch_Y
+     While IsMoving
+     Sleep(100)
+     Wend
+  If Tool = 0 Then
+	Response = MsgBox (FirstZero , 4 , OffSetZero)
+    If (Response = 6) Then 'Yes
+	'---First Probe run---
+     Message StartProbe & ZProbeStart
+     Code "G53 G00 Z"&ZProbeStart
+     While IsMoving
+     Sleep(100)
+     Wend
+     Code "G91 G31 Z" & ZProbeMax & "F" & ProbeFeed1
+     While IsMoving()
+     Sleep(100)
+     Wend
+     Zpos = GetDRO(2)
+     Message "1sVar(2002)="& Zpos
+	 
+    '---2.nd Probe run with reduced speed---
+	Code "G90 G00 Z" & Zpos + ZRetract
+    While IsMoving()
+    Sleep(100)
+    Wend
+	ZRetract = ZRetract + 10
+    Code "G91 G31 Z-" & ZRetract & "F" & ProbeFeed2
+    While IsMoving()
+    Sleep(100)
+    Wend
+    Zpos = GetDRO(2)	
+	Call Setvar (1000,Zpos)
+	Message "2sVar(2002)="& Zpos
+	Code "G90"
+	Code "G53 G00 Z" & ZProbeStart
+	While IsMoving()
+	Wend 
+	
+	Else
+	  MsgBox ReConfZero
+	End If
+	
+  Else
+
+     '---First Probe run---
+     Message StartProbe & ZProbeStart
+     Code "G53 G00 Z"&ZProbeStart
+     While IsMoving
+     Sleep(100)
+     Wend
+	 Zpos = GetDRO(2)
+	 OldZpos = Zpos
+     Code "G91 G31 Z" & ZProbeMax & "F" & ProbeFeed1
+     While IsMoving()
+     Sleep(100)
+     Wend
+     Zpos = GetDRO(2)
+     Message "1sVar(2002)="& Zpos
+	 
+    '---2.nd Probe run with reduced speed---
+    Code "G90 G00 Z" & Zpos + ZRetract
+	While IsMoving()
+    Sleep(100)
+    Wend
+	ZRetract = ZRetract + 10
+    Code "G91 G31 Z-" & ZRetract & "F" & ProbeFeed2
+    While IsMoving()
+    Sleep(100)
+    Wend
+    Zpos = GetDRO(2)
+    Message "2sVar(2002)="& Zpos
+	
+	If Zpos = OldZpos - Abs(ZProbeMax) Then
+		response = MsgBox (ErrTchZero , 4 ,OffSetZero)
+	Else
+		
+		Call SetDRO (2,ZOffset)
+		
+	    Message "Zoffset = " &Zoffset
+        Code "G90"
+	    Code "G53 G00 Z" & ZProbeStart
+	    While IsMoving()
+	    Wend 	
+		
+	End If
+	Code "G90"	
+  End If
+  Code "G53 G00 Z" & ToolUp
+  
+End If   
+'SetOEMDRO(818,CurrentFeed)
+End Sub
+
+'-----------------UnLoadTool----------------------
+Sub UnLoadTool(Byval ToolNumber As Integer)
+ ToolUp = -5.5555
+If GetOemDro(1232) <> 0 Then
+  ToolUp = GetOemDro(1232)
+ End If
+ engage_z = -6
+If GetOemDro(1237) <> 0 Then
+  engage_z = GetOemDro(1237)
+ End If
+ engage_feed = 2400
+If GetOemDro(1236) <> 0 Then
+  engage_feed = GetOemDro(1236)
+ End If 
+SpinSpeed_ccw = 2000
+If GetOemDro(1235) <> 0 Then
+   SpinSpeed_ccw = GetOemDro(1235)
+End If
+Code "G00 G53 Z" & ToolUp
+While IsMoving()
+Wend
+Call OperateDustCoverOutput(1)
+Call MovePos(ToolNumber)
+Code "G4 P1"
+Code "G91 Z-1"
+While IsMoving()
+Wend
+'Code "G90"
+SetSpinSpeed(SpinSpeed_ccw)
+DoSpinCCW()
+Code "G4 P1"   'wait for the tool to release
+Sleep(125)
+Code "G4 P1"
+Code "F" & engage_feed
+Code "G91 Z" & engage_z
+'SystemWait For (7) 'wait for the tool Release Limit Switch
+'While IsMoving()
+'Sleep(125)
+'Wend
+'Code "G4 P1"
+Code "G90"
+Code "G00 G53 Z" & ToolUp
+While IsMoving()
+Sleep(125)
+Wend
+DoSpinStop()
+While IsMoving()
+Sleep(125)
+Wend
+Sleep(100)
+Code "G4 P.25"
+End Sub
+
+'-------------------LoadTool----------------------
+Sub LoadTool(Byval ToolNumber As Integer)
+ ToolUp = -5.5555
+If GetOemDro(1232) <> 0 Then
+  ToolUp = GetOemDro(1232)
+ End If 
+ engage_z = -6
+If GetOemDro(1237) <> 0 Then
+  engage_z = GetOemDro(1237)
+ End If
+ engage_feed = 2400
+If GetOemDro(1236) <> 0 Then
+  engage_feed = GetOemDro(1236)
+ End If 
+SpinSpeed_cw = 2000
+If GetOemDro(1234) <> 0 Then
+   SpinSpeed_cw = GetOemDro(1234)
+End If
+Code "G00 G53 Z" & ToolUp
+While IsMoving()
+Wend
+Call OperateDustCoverOutput(1)
+Call MovePos(ToolNumber)
+'Code "G53 Z" & ToolDown
+'Code "G4 P.75"
+While IsMoving()
+Wend
+SetSpinSpeed(SpinSpeed_cw)
+DoSpinCW()
+'ActivateSignal(Output1) 'Turn On Drv bar to release the tool
+Code "G4 P1"   'wait for the tool to release
+'While IsMoving()
+'Sleep(250)
+'Wend
+'Code "G4 P2" 
+Code "F" & engage_feed
+Code "G91 Z" & engage_z
+'SystemWait For (7) 'wait for the tool Release Limit Switch
+While IsMoving()
+Sleep(125)
+Wend
+Code "G90"
+Code "G00 G53 Z" & ToolUp
+While IsMoving()
+Sleep(125)
+Wend
+DoSpinStop()
+While IsMoving()
+Sleep(125)
+Wend
+Call SetUserDRO(1224,ToolNumber)
+SetCurrentTool(ToolNumber)
+Sleep(125)
+End Sub
+
+'-----------------MovePoints----------------------
+Sub MovePos(ByVal ToolNumber As Integer)
+ Select Case ToolNumber
+     Case Is = 1
+  Xpos = -213.1375
+  Ypos = -16.2
+  Zpos = -55.4594
+Case Is = 2
+  Xpos = -162.8
+  Ypos = -16.6125
+  Zpos = -55.2062
+Case Is = 3
+  Xpos = -112.8344
+  Ypos = -16.275
+  Zpos = -54.4375
+Case Is = 4
+  Xpos = -62.8438
+  Ypos = -16.275
+  Zpos = -54.8
+Case Is = 5
+  Xpos = -12.3469
+  Ypos = -16.775
+  Zpos = -57.1
+Case Is = 6
+  Xpos = 322.3609
+  Ypos = 123.5813
+  ZPos = -36.3331
+Case Is = 7
+  Xpos = -271.0969
+  Ypos = -19.3969
+  Zpos = -2.0031
+Case Is = 8
+  Xpos = 322.3609
+  Ypos = 123.5813
+  ZPos = -36.3331
+End Select
+'
+Code "G53 X" & Xpos & "Y" & Ypos
+Code "G4 P1"
+Code "G53 Z" & ZPos
+End Sub
+'-----------------------end Globals
+
+Function OperateDustCoverOutput(ByVal coverState As Integer)
+  signalNum = GetDustCoverSignalNumber()
+  If coverState = 0 Then
+    Call DeactivateSignal(signalNum)
+	SetUserLED(1250,0)
+  Else
+    Call ActivateSignal(signalNum)
+	SetUserLED(1250,1)
+    Sleep(500)
+  End If
+  While IsMoving()
+  Sleep(100)
+  Wend
+  OperateDustCoverOutput = True
+End Function
+
+Function GetDustCoverSignalNumber()
+  Select Case GetUserDRO(1240)
+    Case 1
+      GetDustCoverSignalNumber = OUTPUT1
+    Case 2
+      GetDustCoverSignalNumber = OUTPUT2
+    Case 3
+      GetDustCoverSignalNumber = OUTPUT3
+    Case 4
+      GetDustCoverSignalNumber = OUTPUT4
+    Case Else
+      GetDustCoverSignalNumber = -1 ' Not an output signal
+  End Select
+End Function

@@ -1,0 +1,18 @@
+Sub Main()
+
+Dim file1 As String
+
+ToolUp = -2
+If GetOemDro(1232) <> 0 Then
+  ToolUp = GetOemDro(1232)
+End If
+file1 = "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+Call StrFileToolPos(file1)
+Sleep(125)
+
+Code "G53 G00 Z" & ToolUp
+End Sub
+#expand "\Mach3\macros\Mach3Mill\atFunctions.m1s"
+Main
+'

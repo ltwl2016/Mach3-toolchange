@@ -1,0 +1,37 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+
+Dim file1 As String
+Dim file2 As String
+Dim file3 As String
+Dim file4 As String
+
+
+Dim strSource,strTagne As String
+
+If GetOEMDRO(1232) = 0 Then
+  Message ZeroInval
+  Exit Sub
+End If
+
+file1 = "\Mach3\macros\Mach3Mill\m901.m1s"
+file2 = "\Mach3\macros\Mach3Mill\m902.m1s"
+file3 = "\Mach3\macros\Mach3Mill\m940.m1s"
+file4 = "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+strSource = "If GetOemDro(1232) <> 0"
+strTagne = "ToolChangedPos_z = "
+Call StrFileZup(file1,strSource,strTagne)
+Sleep(125)
+Call StrFileZup(file2,strSource,strTagne)
+Sleep(125)
+
+strSource = "If GetOemDro(1232) <> 0"
+strTagne = "ToolUp = "
+Call StrFileZup(file3,strSource,strTagne)
+Sleep(125)
+Call StrFileZup(file4,strSource,strTagne)
+Sleep(125)
+
+End Sub
+#expand "\Mach3\macros\Mach3Mill\atFunctions.m1s"

@@ -1,0 +1,17 @@
+'
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main
+tool = GetSelectedTool()
+If GetOemDro(1232) <> 0 and GetUserLED(1250) <> 0 Then
+  Message SetinToolUped & GetOemDro(1232) & MoveToPocket & tool & Pockets
+  Code "G00 G53 Z" & GetOemDro(1232)
+  While IsMoving()
+  Wend
+  Call MovePos(tool)
+Else
+  Message ErrSetinToolUp
+End If
+
+End Sub
+ #expand "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+'

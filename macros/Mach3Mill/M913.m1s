@@ -1,0 +1,21 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+
+Dim file1 As String
+
+Dim strSource,strTagne As String
+
+If (GetOEMDRO(1230) = 0) or (GetOEMDRO(1231) = 0) Then
+  Message ZeroInval
+  Exit Sub
+End If
+
+file1 = "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+strSource = "If (GetOemDro(1230) <> 0)"
+strTagne = "Probe_Touch_X = "
+
+Call StrFileProbePos(file1,strSource,strTagne)
+
+End Sub
+#expand "\Mach3\macros\Mach3Mill\atFunctions.m1s"

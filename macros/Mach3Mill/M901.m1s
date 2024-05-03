@@ -1,0 +1,34 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+'---Variablcs----
+FeedCurrent = GetOemDRO(818) 'Get the current settings
+tool = GetSelectedTool()
+NewTool = tool
+OldTool = GetOEMDRO (1224) 'Tool In spindle DRO You must add this to you screen
+MaxToolNum = 5 'Max number off tools for the changer
+ToolChangedPos_z = -2
+If GetOemDro(1232) <> 0 Then
+  ToolChangedPos_z = GetOemDro(1232)
+ End If
+Code "F4000"
+If NewTool >MaxToolNum Or OldTool >MaxToolNum then
+   Message MaxToolMsg
+    Exit Sub
+End If
+If  NewTool <>0 then
+ Call LoadTool(NewTool)
+ While IsMoving()
+ Sleep(125)
+ Wend
+ Code "G53 Z" & ToolChangedPos_z
+ While IsMoving()
+ Sleep(125)
+ Wend
+End If
+ SetOEMDRO(818,FeedCurrent)
+ Call OperateDustCoverOutput(0)
+End Sub
+               
+#expand "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+Main
+'-

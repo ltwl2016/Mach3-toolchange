@@ -1,0 +1,55 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+
+Dim file1 As String
+
+Dim strSource,strTagne As String
+
+If GetOEMDRO(1234) = 0 Then
+  Message ZeroInval
+  Exit Sub
+End If
+
+file1 = "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+strSource = "If GetOemDro(1234) <> 0"
+strTagne = "SpinSpeed_cw = "
+
+Call StrFilePro(file1,strSource,strTagne)
+Sleep(125)
+
+End Sub
+
+Sub StrFilePro(ByVal fileSource As String,ByVal StrAfte As String,ByVal StrBefo As String)
+
+  Dim Sk As Long 
+  
+  Dim str1,str2,str3,strLeft,strRight,strNew As String
+  Dim fileTagne As String
+  Dim position,pos2 As Integer 
+  
+   fileTagne = fileSource
+   Sk = GetOEMDRO(1234)
+   
+   str1 = FindStringInFile(fileTagne)
+   str2 = StrAfte
+   str3 = StrBefo
+   
+   pos2 = InStr(1, str1, str3)
+   position = InStr(pos2, str1, str2)
+   
+   If position > 0 And position < Len(str1) Then
+   strLeft = Left(str1, pos2 - 1) & str3 & Sk & Chr(13) & Chr(10)
+   strRight = Right(str1, Len(str1) - position + 1)
+   strNew = strLeft + strRight
+   End If
+   
+   strNew = Left(strNew, Len(strNew) - 2)
+   
+   Open fileTagne For Output As #1
+   Print #1,strNew
+   Message "SpinSpeed_cw = " & Sk & Chr(35) & ",,,,,Position = " & position & ",,,,,ContentLenght =" & Len(str1)
+   Close #1
+
+End Sub
+#expand "\Mach3\macros\Mach3Mill\atFunctions.m1s"

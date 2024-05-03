@@ -1,0 +1,37 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+'---Variablcs----
+MaxToolNum = 5
+ToolChangedPos_z = -2
+If GetOemDro(1232) <> 0 Then
+  ToolChangedPos_z = GetOemDro(1232)
+ End If
+OldTool = GetOEMDRO (1224) 'Tool In spindle DRO You must add this to you screen
+If OldTool >MaxToolNum then
+   Message MaxToolMsg
+    Exit Sub
+End If
+While OldTool = 0 
+ OldTool = Question (OldToolMsg &MaxToolNum &"]")
+Wend
+Code "G00 G53 Z" & ToolChangedPos_z
+Code "G90 F4000"
+While IsMoving()
+Wend
+Call UnLoadTool(OldTool)
+While IsMoving()
+Sleep(125)
+Wend
+Code "G4 P.25"
+Code "G00 G53 Z" & ToolChangedPos_z
+While IsMoving()
+Sleep(125)
+Wend
+Call SetUserDRO(1224,0)
+SetCurrentTool(0)
+Call OperateDustCoverOutput(0)
+End Sub
+               
+#expand "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+Main
+'

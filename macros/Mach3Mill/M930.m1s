@@ -1,0 +1,184 @@
+'-------------------
+'Josh Haywood I'll Do It Myself XYZ Probe Macro
+'To probe Z-
+'https://www.youtube.com/illdoitmyself
+'Note: This script is designed for metric units e.g. mm
+'-------------------
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+
+'Sub Main
+'Message( AtToolZero ) 
+'tool = GetSelectedTool()
+'Call Probe(tool)
+'End Sub
+'#expand "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+'-------------On MyProbe for Toucher--------
+Sub Main
+ '-------------------
+Message( AtToolZero )
+Zpos = GetDRO(2)
+Tool = GetOEMDRO (1224)
+ZOffset = GetVar (1000)
+ZProbeStart = 10
+If GetOemDro(1233) <> 0 Then
+  ZProbeStart = GetOemDro(1233)
+End If
+Probe_Touch_X = 261.707
+Probe_Touch_Y = 28.3117
+If (GetOemDro(1230) <> 0) and (GetOemDro(1231) <> 0)Then
+  Probe_Touch_X = GetOemDro(1230)
+  Probe_Touch_Y = GetOemDro(1231)
+End If
+ZProbeMax = -30.0
+ZRetract =2.00
+ProbeFeed1 = 100
+ProbeFeed2 = 50
+ToolUp =  40
+If GetOemDro(1232) <> 0 Then
+  ToolUp = GetOemDro(1232)
+ End If
+CurrentFeed = GetOEMDRO(818)
+If GetOemLed (825) <> 0 Then 'Check to see if the probe is already grounded or faulty
+     MsgBox (ProbeTchGnd)
+  Exit Sub
+Else
+     Code "G00 G53 Z" & ToolUp
+	 While IsMoving
+     Sleep(100)
+     Wend
+     If Tool = 0 Then
+	   
+       Code "G00 G53 X" & Probe_Touch_X & "Y" & Probe_Touch_Y
+       While IsMoving
+       Sleep(100)
+       Wend
+	 Else
+	   Speak(tallker1)
+	   'Probe_Touch_X = 319.3313
+	   'Probe_Touch_Y = 93.7375
+	   Code "G00 G53 X" & Probe_Touch_X & "Y" & Probe_Touch_Y
+       While IsMoving
+       Sleep(100)
+       Wend
+	   Speak(tallker4)
+	   Response = MsgBox (CheckZero , 4 , OffSetZero)
+	   If (Response = 6) Then 'Yes
+          	Tool = 0
+			Speak(tallker10)
+	   Else	        
+	        Message ProbeToolLen
+			Speak(tallker9)
+       End If			
+	 End If
+  If Tool = 0 Then
+	Response = MsgBox (FirstZero , 4 , OffSetZero)
+    If (Response = 6) Then 'Yes
+	'---First Probe run---
+	 Speak(tallker6)
+     Message StartProbe & ZProbeStart
+     Code "G53 G00 Z"&ZProbeStart
+     While IsMoving
+     Sleep(100)
+     Wend
+	 Message UnChangeZ & GetVar (1000)
+	 Zpos = GetDRO(2)
+	 OldZpos = Zpos
+     Code "G91 G31 Z" & ZProbeMax & "F" & ProbeFeed1
+     While IsMoving()
+     Sleep(100)
+     Wend
+     Zpos = GetDRO(2)
+     Message "1sVar(2002)="& Zpos
+	 '-----------------CheckProbe------------------
+     If Zpos - (OldZpos - Abs(ZProbeMax)) <= 0.02 Then
+	   Speak(ErrTchZero)
+       MachMsg (ErrTchZero,OffSetZero,0)
+       Code "G90"
+       Code "G53 G00 Z" & ToolUp
+	    While IsMoving()
+	    Wend    
+       Exit Sub
+     End If
+	 
+    '---2.nd Probe run with reduced speed---
+	Code "G90 G00 Z" & Zpos + ZRetract
+    While IsMoving()
+    Sleep(100)
+    Wend
+	ZRetract = ZRetract + 1
+    Code "G91 G31 Z-" & ZRetract & "F" & ProbeFeed2
+    While IsMoving()
+    Sleep(100)
+    Wend
+    Zpos = GetDRO(2)	
+	Call Setvar (1000,Zpos)
+	Message AtOffSetZ & Zpos
+	Code "G90"
+	Code "G53 G00 Z" & ZProbeStart
+	While IsMoving()
+	Wend 
+	
+	Else
+	  Speak(ReConfZero)
+	  MsgBox ReConfZero
+	End If
+	
+  Else
+     Speak(ProbeToolLen)
+	 If ZOffset = 0 or Abs(ZOffset) < 0.02 Then
+		Speak(WringZero)
+        MachMsg (WringZero,OffSetZero,0)   
+	 End If
+     '---First Probe run---
+     Message StartProbe & ZProbeStart
+     Code "G53 G00 Z"&ZProbeStart
+     While IsMoving
+     Sleep(100)
+     Wend
+	 Message ProbeToolLen
+	 Zpos = GetDRO(2)
+	 OldZpos = Zpos
+     Code "G91 G31 Z" & ZProbeMax & "F" & ProbeFeed1
+     While IsMoving()
+     Sleep(100)
+     Wend
+     Zpos = GetDRO(2)
+	 '-----------------CheckProbe------------------
+     If Zpos - (OldZpos - Abs(ZProbeMax)) <= 0.02 Then
+	   Speak(ErrTchZero)
+       MachMsg (ErrTchZero,OffSetZero,0)
+       Code "G90"
+       Code "G53 G00 Z" & ToolUp
+	    While IsMoving()
+	    Wend    
+       Exit Sub
+     End If 
+    '---2.nd Probe run with reduced speed---
+    Code "G90 G00 Z" & Zpos + ZRetract
+	While IsMoving()
+    Sleep(100)
+    Wend
+	ZRetract = ZRetract + 1
+    Code "G91 G31 Z-" & ZRetract & "F" & ProbeFeed2
+    While IsMoving()
+    Sleep(100)
+    Wend
+    Zpos = GetDRO(2)
+    'Message "2sVar(2002)="& Zpos
+		
+	Call SetDRO (2,ZOffset)
+		
+	Message AtOffSetZ & Zoffset
+    Code "G90"
+	Code "G53 G00 Z" & ZProbeStart
+	While IsMoving()
+	Wend 	
+	Code "G90"	
+ End If
+    Code "G53 G00 Z" & ToolUp
+  
+End If   
+SetOEMDRO(818,CurrentFeed)
+
+End Sub 

@@ -1,0 +1,48 @@
+#expand "\Mach3\macros\Mach3Mill\atPConsts.m1s"
+Sub Main()
+
+Dim file1 As String
+
+If GetOEMDRO(1233) = 0 Then
+  Message ZeroInval
+  Exit Sub
+End If
+
+file1 = "\Mach3\macros\Mach3Mill\atGlobals.m1s"
+
+Call StrFilePro(file1)
+Sleep(125)
+
+End Sub
+
+Sub StrFilePro(Byval fileSource As String)
+
+  Dim Zk As Currency 
+  
+  Dim str1,str2,str3,strLeft,strRight,strNew As String
+  Dim fileTagne As String
+  Dim position,pos2 As Integer 
+  
+   fileTagne = fileSource
+   Zk = GetOEMDRO(1233)
+   str1 = FindStringInFile(fileTagne)
+   str2 = "If GetOemDro(1233) <> 0"
+   str3 = "ZProbeStart = "
+   
+   position = InStr(1, str1, str2)
+   pos2 = InStr(1, str1, str3)
+
+   If position > 0 And position < Len(str1) Then
+   strLeft = Left(str1, pos2 - 1) & str3 & Zk & Chr(13) & Chr(10)
+   strRight = Right(str1, Len(str1) - position + 1)
+   strNew = strLeft + strRight
+   End If
+   
+   strNew = Left(strNew, Len(strNew) - 2)
+   
+   Open fileTagne For Output As #1
+   Print #1,strNew
+   Message "Found =" & Chr(35) & ",,,,,Position = " & position & ",,,,,ContentLenght =" & Len(str1)
+   Close #1
+End Sub
+#expand "\Mach3\macros\Mach3Mill\atFunctions.m1s"

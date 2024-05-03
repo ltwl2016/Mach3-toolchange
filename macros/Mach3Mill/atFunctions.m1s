@@ -1,0 +1,165 @@
+
+'-------------------------StringProcess for ToolUp----------------------------------------
+Sub StrFileZup(ByVal fileSource As String,ByVal StrAfte As String,ByVal StrBefo As String)
+
+  Dim Zk As Currency 
+  
+  Dim str1,str2,str3,strNew As String
+  Dim fileTagne As String
+
+  
+   fileTagne = fileSource
+   Zk = GetOEMDRO(1232)
+   str1 = FindStringInFile(fileTagne)
+   str2 = StrAfte
+   str3 = StrBefo
+   strNew = ReplaceStringBetweenMultiple(str1, str3, str2, Str(Zk) & Chr(13) & Chr(10))
+   
+   strNew = Left(strNew, Len(strNew) - 2)
+   
+   Open fileTagne For Output As #1
+   Print #1,strNew
+   Message "Found = " & Chr(35) & ",,,,,ContentLenght =" & Len(str1)
+   Close #1
+
+End Sub
+
+'-------------------------StringProcess for Probe_Touch----------------------------------------
+Sub StrFileProbePos(ByVal fileSource As String,ByVal StrAfte As String,ByVal StrBefo As String)
+
+  Dim Yk As Currency   
+  Dim Xk As Currency 
+  
+  Dim str1,str2,str3,strLeft,strRight,strNew As String
+  Dim fileTagne As String
+  Dim position,pos2 As Integer 
+  
+   fileTagne = fileSource
+   Xk = GetOEMDRO(1230)
+   Yk = GetOEMDRO(1231)
+   str1 = FindStringInFile(fileTagne)
+   str2 = StrAfte
+   str3 = StrBefo
+   
+   pos2 = InStr(1, str1, str3)
+   position = InStr(pos2, str1, str2)
+   
+   If position > 0 And position < Len(str1) Then
+   strLeft = Left(str1, pos2 - 1) & str3 & Xk & Chr(13) & Chr(10) & "Probe_Touch_Y = " & Yk & Chr(13) & Chr(10)
+   strRight = Right(str1, Len(str1) - position + 1)
+   strNew = strLeft + strRight
+   End If
+   
+   strNew = Left(strNew, Len(strNew) - 2)
+   
+   Open fileTagne For Output As #1
+   Print #1,strNew
+   Message "Found = " & Chr(35) & ",,,,,Position = " & position & ",,,,,ContentLenght =" & Len(str1)
+   Close #1
+
+End Sub
+
+'-------------------------StringProcess for ToolPos----------------------------------------
+Sub StrFileToolPos(Byval fileSource As String)
+
+  Dim Zk As Currency 
+  Dim Yk As Currency   
+  Dim Xk As Currency
+  Dim str1,str2,str3,strLeft,strRight,strNew As String
+  Dim fileTagne As String
+  Dim position,pos2 As Integer 
+  tool = GetSelectedTool()
+  fileTagne = fileSource
+   Xk = GetOEMDRO(83)
+   Yk = GetOEMDRO(84)
+   Zk = GetOEMDRO(85)
+   str1 = FindStringInFile(fileTagne)
+   str2 = "Case Is = " & tool+1
+   str3 = "Case Is = " & tool
+
+   position = InStr(1, str1, str2)
+   pos2 = InStr(1, str1, str3)
+
+   If position > 0 And position < Len(str1) Then
+   strLeft = Left(str1, pos2-1) & str3 & Chr(13) & Chr(10) & "  Xpos = " & Xk & Chr(13) & Chr(10) & "  Ypos = " & Yk & Chr(13) & Chr(10) & "  Zpos = " & Zk & Chr(13) & Chr(10) & str2 & Chr(13)' & Chr(10)
+   strRight = Right(str1, Len(str1) - position - Len(str2))
+   strNew = strLeft + strRight
+   End If
+   
+   strNew = Left(strNew, Len(strNew) - 2)
+   
+   Open fileTagne For Output As #1
+   Print #1,strNew
+   Message "Found " & tool & Chr(35) & ",,,,,Position = " & position & ",,,,,ContentLenght =" & Len(str1)
+   Close #1
+
+End Sub
+
+'-------------------------StringProcess for FileString----------------------------------------
+Function FindStringInFile(filePath As String) As String
+
+   Dim fileContent As String 
+      
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+    Set objFile = objFSO.getfile(filePath)
+    Set objF1 = objFile.OpenAsTextStream(1)
+    fileContent = objF1.ReadAll  
+    objF1.Close
+	FindStringInFile = fileContent
+	      Set objFSO = Nothing
+          Set objFile = Nothing 
+          Set objF1 = Nothing
+End Function
+
+'-------------------------StringProcess for FileString----------------------------------------
+ Function ReplaceStringBetweenMultiple(ByVal searchString As String, ByVal startString As String, ByVal endString As String, ByVal replaceString As String) As String
+    '  searchString  startString  endString replaceString
+    
+    Dim startIndex As Integer
+    Dim endIndex As Integer
+    Dim middleString As String
+    Dim newString As String
+    Dim i As Integer
+    
+    i = 1
+    Do While True
+        startIndex = InStr(i, searchString, startString)
+        
+        If startIndex > 0 Then
+            endIndex = InStr(startIndex, searchString, endString)
+            
+            If endIndex > 0 Then
+                middleString = Mid(searchString, startIndex + Len(startString), endIndex - startIndex - Len(startString))
+				If Len(middleString) < 13 Then
+				 newString = Replace(searchString, middleString, replaceString)
+                 searchString = newString 
+				 i = endIndex + Len(endString) + 1
+				Else
+				 i = startIndex + Len(startString) +1
+				End If 
+                'i = endIndex + Len(endString) + 1 				
+            Else
+                Exit Do
+            End If
+        Else
+            Exit Do
+        End If
+    Loop
+    
+    ReplaceStringBetweenMultiple = searchString
+End Function
+
+'-------------------------StringProcess for FileString----------------------------------------
+ Function Replace(ByVal searchString As String, ByVal oldText As String, ByVal newText As String) As String
+    
+    Dim index As Integer
+    Dim tempString As String  
+    index = InStr(1, searchString, oldText)   
+    If index > 0 Then     
+        tempString = Left(searchString, index - 1) & newText & Right(searchString, Len(searchString) - index - Len(oldText) + 1)
+        Replace = tempString
+    Else
+        Replace = searchString
+    End If
+End Function
+'-------------------------End StringProcess Functions----------------------------------------
